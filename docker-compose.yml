@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    env_file: .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U griduser -d globalgrid"]
+      interval: 5s
+      retries: 5
+
+  scraper:
+    build: .
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: python -m scrapers.aemo
+    volumes:
+      - .:/app
+
+volumes:
+  pgdata:

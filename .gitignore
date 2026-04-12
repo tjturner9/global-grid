@@ -1,0 +1,13 @@
+# Environment
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Data
+*.zip
+*.csv
+
+# Editor
+.vscode/
+.idea/
