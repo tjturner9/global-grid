@@ -11,10 +11,10 @@ BMRS_BASE = "https://data.elexon.co.uk/bmrs/api/v1"
 
 class BMRSPriceRecord(BaseModel):
     settlement_date: date
-    settlement_period: int          # 1–48
-    system_sell_price: float        # £/MWh
-    system_buy_price: float         # £/MWh
-    net_imbalance_volume: float     # MWh
+    settlement_period: int  # 1–48
+    system_sell_price: float  # £/MWh
+    system_buy_price: float  # £/MWh
+    net_imbalance_volume: float  # MWh
 
     @field_validator("settlement_period")
     @classmethod
@@ -35,13 +35,15 @@ def fetch_day(settlement_date: date, client: httpx.Client) -> list[BMRSPriceReco
     records = []
     for row in raw:
         try:
-            records.append(BMRSPriceRecord(
-                settlement_date=row["settlementDate"],
-                settlement_period=row["settlementPeriod"],
-                system_sell_price=row["systemSellPrice"],
-                system_buy_price=row["systemBuyPrice"],
-                net_imbalance_volume=row["netImbalanceVolume"],
-            ))
+            records.append(
+                BMRSPriceRecord(
+                    settlement_date=row["settlementDate"],
+                    settlement_period=row["settlementPeriod"],
+                    system_sell_price=row["systemSellPrice"],
+                    system_buy_price=row["systemBuyPrice"],
+                    net_imbalance_volume=row["netImbalanceVolume"],
+                )
+            )
         except Exception as e:
             logger.warning("Skipping malformed row %s: %s", row, e)
 

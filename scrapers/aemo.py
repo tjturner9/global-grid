@@ -13,10 +13,10 @@ NEMWEB_BASE = "https://nemweb.com.au/Reports/Archive/DispatchIS_Reports"
 
 class AEMOPriceRecord(BaseModel):
     settlement_date: date
-    interval_datetime: str      # e.g. "2024/01/01 00:05:00"
-    region_id: str              # NSW1, VIC1, QLD1, SA1, TAS1
-    rrp: float                  # Regional Reference Price AUD/MWh
-    dispatch_interval: int      # 1–288 per day (5-min intervals)
+    interval_datetime: str  # e.g. "2024/01/01 00:05:00"
+    region_id: str  # NSW1, VIC1, QLD1, SA1, TAS1
+    rrp: float  # Regional Reference Price AUD/MWh
+    dispatch_interval: int  # 1–288 per day (5-min intervals)
 
 
 def _date_to_filename(d: date) -> str:
@@ -55,9 +55,16 @@ def fetch_day(d: date, region: str = "NSW1") -> list[AEMOPriceRecord]:
         # D, DISPATCH, PRICE, <version>, SETTLEMENTDATE, RUNNO, REGIONID,
         # DISPATCHINTERVAL, INTERVENTION, RRP, RAISE6SECRRP, ...
     cols = [
-        "row_type", "table_name", "sub_type", "version",
-        "SETTLEMENTDATE", "RUNNO", "REGIONID", "DISPATCHINTERVAL",
-        "INTERVENTION", "RRP",
+        "row_type",
+        "table_name",
+        "sub_type",
+        "version",
+        "SETTLEMENTDATE",
+        "RUNNO",
+        "REGIONID",
+        "DISPATCHINTERVAL",
+        "INTERVENTION",
+        "RRP",
     ]
 
     df = pd.read_csv(
@@ -73,13 +80,15 @@ def fetch_day(d: date, region: str = "NSW1") -> list[AEMOPriceRecord]:
     records = []
     for _, row in df.iterrows():
         try:
-            records.append(AEMOPriceRecord(
-                settlement_date=d,
-                interval_datetime=row["SETTLEMENTDATE"],
-                region_id=row["REGIONID"],
-                rrp=float(row["RRP"]),
-                dispatch_interval=int(row["DISPATCHINTERVAL"]),
-            ))
+            records.append(
+                AEMOPriceRecord(
+                    settlement_date=d,
+                    interval_datetime=row["SETTLEMENTDATE"],
+                    region_id=row["REGIONID"],
+                    rrp=float(row["RRP"]),
+                    dispatch_interval=int(row["DISPATCHINTERVAL"]),
+                )
+            )
         except Exception as e:
             logger.warning("Skipping malformed row: %s", e)
 
