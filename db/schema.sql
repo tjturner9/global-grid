@@ -8,5 +8,8 @@ CREATE TABLE IF NOT EXISTS energy_prices (
     interval_min INTEGER NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_energy_prices_timestamp
+CREATE INDEX IF NOT EXISTS idx_energy_prices_timestamp 
 ON energy_prices (timestamp_utc);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_energy_prices_unique 
+ON energy_prices (timestamp_utc, source, region);

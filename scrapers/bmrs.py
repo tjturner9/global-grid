@@ -1,4 +1,5 @@
 import httpx
+import pandas as pd
 from datetime import date, timedelta
 from pydantic import BaseModel, field_validator
 from typing import Generator
@@ -15,6 +16,21 @@ class BMRSPriceRecord(BaseModel):
     system_sell_price: float  # £/MWh
     system_buy_price: float  # £/MWh
     net_imbalance_volume: float  # MWh
+
+    def to_db_row(self) -> dict:
+        # Note: settlement periods are UK local time (GMT/BST), treated as UTC here
+        # TODO: handle BST offset in normalisation
+        dt = pd.to_datetime(self.settlement_date) + pd.to_timedelta(
+            (self.settlement_period - 1) * 30, unit="min"
+        )
+        return {
+            "timestamp_utc": dt,
+            "source": "BMRS",
+            "region": "GB",
+            "price": self.system_sell_price,
+            "currency": "GBP",
+            "interval_min": 30,
+        }
 
     @field_validator("settlement_period")
     @classmethod

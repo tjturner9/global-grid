@@ -1,10 +1,14 @@
 import io
+from locale import currency
+from typing import Generator
 import zipfile
 import httpx
 import pandas as pd
-from datetime import date
+from datetime import date, datetime, timedelta
 from pydantic import BaseModel
 import logging
+import pytz
+
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +21,20 @@ class AEMOPriceRecord(BaseModel):
     region_id: str  # NSW1, VIC1, QLD1, SA1, TAS1
     rrp: float  # Regional Reference Price AUD/MWh
     dispatch_interval: int  # 1–288 per day (5-min intervals)
+
+    def to_db_row(self) -> dict:
+        AEST = pytz.timezone("Australia/Brisbane")
+        dt = AEST.localize(
+            datetime.strptime(self.interval_datetime, "%Y/%m/%d %H:%M:%S")
+        ).astimezone(pytz.utc)
+        return {
+            "timestamp_utc": dt,
+            "source": "AEMO",
+            "region": self.region_id,
+            "price": self.rrp,
+            "currency": "AUD",
+            "interval_min": 5,
+        }
 
 
 def _date_to_filename(d: date) -> str:
@@ -93,3 +111,29 @@ def fetch_day(d: date, region: str = "NSW1") -> list[AEMOPriceRecord]:
             logger.warning("Skipping malformed row: %s", e)
 
     return records
+
+
+def date_range(start: date, end: date) -> Generator[date, None, None]:
+    """Yields each date from start up to and including end."""
+    current = start
+    while current <= end:
+        yield current
+        current += timedelta(days=1)
+
+
+def fetch_range(start: date, end: date, region: str = "NSW1") -> list[AEMOPriceRecord]:
+    """Fetch all settlement periods across a date range."""
+    all_records: list[AEMOPriceRecord] = []
+    for day in date_range(start, end):
+        logger.info("Fetching AEMO %s", day)
+        try:
+            records = fetch_day(day, region)
+            if not records:
+                logger.warning("No records returned for %s %s", day, region)
+                continue
+            all_records.extend(records)
+        except httpx.HTTPStatusError as e:
+            logger.error("HTTP error for %s: %s", day, e)
+        except httpx.RequestError as e:
+            logger.error("Network error for %s: %s", day, e)
+    return all_records
