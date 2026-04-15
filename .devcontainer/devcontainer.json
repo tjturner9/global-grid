@@ -1,0 +1,9 @@
+{
+  "name": "Global Grid Dev",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "scraper",
+  "workspaceFolder": "/app",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  }
+}
