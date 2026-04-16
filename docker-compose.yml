@@ -17,9 +17,19 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: python -m scrapers.aemo
+    command: python -m pipeline
     volumes:
       - .:/app
+
+  dashboard:
+    build: .
+    env_file: .env
+    ports:
+      - "8501:8501"
+    depends_on:
+      postgres:
+        condition: service_healthy  
+    command: python -m streamlit run app/app.py
 
 volumes:
   pgdata:
