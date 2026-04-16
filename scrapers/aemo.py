@@ -137,3 +137,38 @@ def fetch_range(start: date, end: date, region: str = "NSW1") -> list[AEMOPriceR
         except httpx.RequestError as e:
             logger.error("Network error for %s: %s", day, e)
     return all_records
+
+def fetch_all_regions_day(d: date) -> list[AEMOPriceRecord]:
+    """
+    Fetch all 5-min dispatch prices for all regions on a single date.
+    Returns up to 288 records (one per 5-min interval).
+    """
+    regions = ["NSW1", "VIC1", "QLD1", "SA1", "TAS1"]
+    all_records: list[AEMOPriceRecord] = []
+    for region in regions:
+        logger.info("Fetching AEMO %s, %s", region, d)
+        try:
+            records = fetch_day(d, region)
+            if not records:
+                logger.warning("No records returned for %s %s", day, region)
+                continue
+            all_records.extend(records)
+        except httpx.HTTPStatusError as e:
+            logger.error("HTTP error for %s: %s", day, e)
+        except httpx.RequestError as e:
+            logger.error("Network error for %s: %s", day, e)
+    return all_records
+
+def fetch_all_region_range(start: date, end: date) -> list[AEMOPriceRecord]:
+    """Fetch all settlement periods across a date range."""
+    all_records: list[AEMOPriceRecord] = []
+    for day in date_range(start, end):
+        logger.info("Fetching AEMO %s", day)
+        try:
+            records = fetch_all_regions_day(day)
+            all_records.extend(records)
+        except httpx.HTTPStatusError as e:
+            logger.error("HTTP error for %s: %s", day, e)
+        except httpx.RequestError as e:
+            logger.error("Network error for %s: %s", day, e)
+    return all_records
