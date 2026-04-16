@@ -63,7 +63,8 @@ def fetch_day(d: date, region: str = "NSW1") -> list[AEMOPriceRecord]:
 
         # Parse MMS CSV — only "D" rows for DISPATCHPRICE table
         lines = raw_bytes.decode("utf-8").splitlines()
-        data_rows.extend([l for l in lines if l.startswith("D,DISPATCH,PRICE")])
+        data_rows.extend(
+            [l for l in lines if l.startswith("D,DISPATCH,PRICE")])
 
     if not data_rows:
         logger.warning("No DISPATCHPRICE rows found for %s", d)
@@ -138,6 +139,7 @@ def fetch_range(start: date, end: date, region: str = "NSW1") -> list[AEMOPriceR
             logger.error("Network error for %s: %s", day, e)
     return all_records
 
+
 def fetch_all_regions_day(d: date) -> list[AEMOPriceRecord]:
     """
     Fetch all 5-min dispatch prices for all regions on a single date.
@@ -158,6 +160,7 @@ def fetch_all_regions_day(d: date) -> list[AEMOPriceRecord]:
         except httpx.RequestError as e:
             logger.error("Network error for %s: %s", day, e)
     return all_records
+
 
 def fetch_all_region_range(start: date, end: date) -> list[AEMOPriceRecord]:
     """Fetch all settlement periods across a date range."""
