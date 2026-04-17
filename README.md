@@ -116,6 +116,20 @@ docker compose run --rm scraper python verify_insert.py
 docker compose exec postgres psql -U griduser -d globalgrid
 ```
 
+---
+
+## Running streamlit without docker
+
+```bash
+# Setting up the python env
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+
+# Running the streamlit app
+streamlit run app/app.py
+```
+
 Useful queries:
 
 ```sql
