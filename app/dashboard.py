@@ -5,7 +5,7 @@ def create_dashboard():
     st.title('Global Grid Analysis')
 
     # data = load_data()
-    data = dummy_data_load()
+    data = load_data()
 
     st.subheader('Raw data')
     st.dataframe(data)

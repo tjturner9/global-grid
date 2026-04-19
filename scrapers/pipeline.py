@@ -8,7 +8,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-def run_pipeline(start: date = date(2025, 4, 5), end: date = date(2025, 4, 7)):
+def run_pipeline(start: date = date(2025, 5, 5), end: date = date(2025, 5, 7)):
     # Initialise database schema
     init_db()
 

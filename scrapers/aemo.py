@@ -152,13 +152,13 @@ def fetch_all_regions_day(d: date) -> list[AEMOPriceRecord]:
         try:
             records = fetch_day(d, region)
             if not records:
-                logger.warning("No records returned for %s %s", day, region)
+                logger.warning("No records returned for %s %s", date, region)
                 continue
             all_records.extend(records)
         except httpx.HTTPStatusError as e:
-            logger.error("HTTP error for %s: %s", day, e)
+            logger.error("HTTP error for %s: %s", date, e)
         except httpx.RequestError as e:
-            logger.error("Network error for %s: %s", day, e)
+            logger.error("Network error for %s: %s", date, e)
     return all_records
 
 

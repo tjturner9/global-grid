@@ -17,7 +17,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: python -m scrapers.pipeline
+    command: python -m scraperspipeline
     volumes:
       - .:/app
 

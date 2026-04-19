@@ -74,7 +74,7 @@ Indexes:
 Fetch and persist data from both AEMO and BMRS:
 
 ```bash
-docker compose run --rm scraper python pipeline.py
+docker compose run --rm scraper python scrapers/pipeline.py
 ```
 
 Verify row counts in the database:
