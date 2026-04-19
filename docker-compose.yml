@@ -26,6 +26,8 @@ services:
     env_file: .env
     ports:
       - "8501:8501"
+    volumes:
+      - .:/app
     depends_on:
       postgres:
         condition: service_healthy  
