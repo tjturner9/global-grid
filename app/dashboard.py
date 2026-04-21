@@ -63,6 +63,13 @@ def dashboard_sidebar_region(data):
 
 
 def dashboard_body_region(data):
+    # regions selected size based on st.session_state['selected_regions']
+    
+    # 0 regions selected = "select a region"
+
+    # 1, 3, 4, 5 region selected = only graph
+
+    # 2 regions selected = graph + spread
 
     data = region_pivot(data)
     regions = ["NSW1", "VIC1", "QLD1", "SA1", "TAS1"]

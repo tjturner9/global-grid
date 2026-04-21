@@ -6,8 +6,7 @@ data = import_data(load_type='dummy')
 data = data[data['source'] == 'AEMO']
 
 if 'min_date' not in st.session_state:
-    st.session_state['selected_regions'] = [
-        "NSW1", "VIC1", "QLD1", "SA1", "TAS1"]
+    st.session_state['selected_regions'] = []
 
 dashboard_sidebar_region(data)
 
