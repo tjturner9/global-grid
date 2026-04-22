@@ -1,13 +1,15 @@
 import os
+from typing import List
 import pandas as pd
 import streamlit as st
-from datetime import date
+import numpy as np
+from datetime import date, datetime, UTC, tzinfo
 import random
 
 import psycopg2
 
 
-# @st.cache_data
+@st.cache_data
 def load_data():
 
     db_name = os.getenv("POSTGRES_DB")
@@ -68,10 +70,9 @@ def dummy_data_load(start: date = date(2025, 4, 5), end: date = date(2025, 4, 7)
             regions = ["NSW1", "VIC1", "QLD1", "SA1", "TAS1"]
 
             for region in regions:
-                static_info['region'] = region
+                static_info["region"] = region
 
-                df = _load_static_info(
-                    dates, static_info, min_price, max_price)
+                df = _load_static_info(dates, static_info, min_price, max_price)
                 dfs.append(df)
 
             df = pd.concat(dfs, ignore_index=True)
@@ -89,39 +90,66 @@ def dummy_data_load(start: date = date(2025, 4, 5), end: date = date(2025, 4, 7)
 def pivot_data(df, min_date, max_date):
     """data prep for time series chart"""
 
-    df[df['timestamp_utc'].between(min_date, max_date)]
+    df[df["timestamp_utc"].between(min_date, max_date)]
     # Aggregate - group by timestamp and source
-    grouped_data = df.groupby(by=['timestamp_utc', 'source'], as_index=False)[
-        'price'].mean()
+    grouped_data = df.groupby(by=["timestamp_utc", "source"], as_index=False)[
+        "price"
+    ].mean()
 
     # pivot - reshape timestamp into index an each source as a column
     pivoted_data = grouped_data.pivot(
-        columns='source', index='timestamp_utc', values='price')
+        columns="source", index="timestamp_utc", values="price"
+    )
 
     # resampling - resample the df to 30-min intervals
-    resampled_data = pivoted_data.resample('30min').mean()
+    resampled_data = pivoted_data.resample("30min").mean()
 
     return resampled_data
 
 
-def calculate_spread(df):
+def calculate_bmrs_aemo_spread(df):
     df = df.copy()
     # convert BMRS to AUD
     # TODO - replace static rate with historic rate, lookup by timestamp
     conversion_rate = 2.03
-    df['BMRS_AUD'] = df['BMRS'] * conversion_rate
+    df["BMRS_AUD"] = df["BMRS"] * conversion_rate
 
     # add dpread column (AEMO - BMRS_AUD)
-    df['spread'] = df['AEMO'] - df['BMRS_AUD']
+    df["spread"] = df["AEMO"] - df["BMRS_AUD"]
 
-    df = df.drop(columns=['AEMO', 'BMRS', 'BMRS_AUD'])
+    df = df.drop(columns=["AEMO", "BMRS", "BMRS_AUD"])
 
     return df
 
 
-def region_pivot(df: pd.DataFrame):
+def region_pivot(df: pd.DataFrame, min_date, max_date):
     df = df.copy()
 
-    df = df.pivot(columns='region', index='timestamp_utc', values='price')
+    min_date = pd.Timestamp(min_date).tz_localize('UTC') if min_date.tzinfo is None else pd.Timestamp(min_date).tz_convert('UTC')
+    max_date = pd.Timestamp(max_date).tz_localize('UTC') if max_date.tzinfo is None else pd.Timestamp(max_date).tz_convert('UTC')
+
+    df[df["timestamp_utc"].between(min_date, max_date)]
+
+    df = df.pivot(columns="region", index="timestamp_utc", values="price")
 
     return df
+
+
+def calculate_region_spread(df: pd.DataFrame, list_of_regions: List):
+    df = df.copy()
+    region1 = list_of_regions[0]
+    region2 = list_of_regions[1]
+    df["spread"] = df[region1] - df[region2]
+    df = df.drop(columns=list_of_regions)
+    return df
+
+
+def prepare_dispatch_settlement(df: pd.DataFrame, region: str):
+    regions = ["NSW1", "VIC1", "QLD1", "SA1", "TAS1"]
+    regions_to_drop = regions.remove(region)
+    df = df.drop(columns=regions_to_drop)
+
+    df = df.rename({region: 'price'})
+
+    min_summary = df.groupby(np.arange(len(df)) // 6).mean()
+
