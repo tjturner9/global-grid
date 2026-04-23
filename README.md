@@ -83,6 +83,12 @@ Verify row counts in the database:
 docker compose exec postgres psql -U griduser -d globalgrid -c "SELECT source, COUNT(*) FROM energy_prices GROUP BY source;"
 ```
 
+Launch the dashboard:
+
+```bash
+docker compose run dashboard
+```
+
 ---
 
 ## Running tests
@@ -127,6 +133,7 @@ venv\Scripts\activate
 pip install -r requirements.txt
 
 # Running the streamlit app
+add "LOAD_TYPE=dummy" to the .env file, this will force dummy data to be used
 streamlit run app/app.py
 ```
 
@@ -185,11 +192,11 @@ The `.env` file will need to be recreated each time you open a new codespace as 
 
 ## Common errors and fixes
 
-| Error | Cause | Fix |
-|---|---|---|
-| `command not found: docker` | Docker Desktop not running | Open Docker Desktop and wait for the whale icon to stop animating |
+| Error                                | Cause                                         | Fix                                                                                       |
+| ------------------------------------ | --------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `command not found: docker`          | Docker Desktop not running                    | Open Docker Desktop and wait for the whale icon to stop animating                         |
 | `database "griduser" does not exist` | Healthcheck missing `-d` flag or stale volume | Check `pg_isready -U griduser -d globalgrid` in healthcheck; run `docker compose down -v` |
-| Changes to `.env` not taking effect | Stale Docker volume from previous boot | `docker compose down -v && docker compose up --build` |
-| `404 Not Found` on AEMO | Date outside available archive range | NEMWeb only holds ~12 months of data; use dates from April 2025 onwards |
-| `psycopg2 socket error` | `POSTGRES_HOST` missing from `.env` | Add `POSTGRES_HOST=postgres` to `.env` |
-| YAML parse error in docker-compose | Tabs or inconsistent indentation | Use 2 spaces throughout, never tabs |
+| Changes to `.env` not taking effect  | Stale Docker volume from previous boot        | `docker compose down -v && docker compose up --build`                                     |
+| `404 Not Found` on AEMO              | Date outside available archive range          | NEMWeb only holds ~12 months of data; use dates from April 2025 onwards                   |
+| `psycopg2 socket error`              | `POSTGRES_HOST` missing from `.env`           | Add `POSTGRES_HOST=postgres` to `.env`                                                    |
+| YAML parse error in docker-compose   | Tabs or inconsistent indentation              | Use 2 spaces throughout, never tabs                                                       |

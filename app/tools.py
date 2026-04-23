@@ -72,7 +72,8 @@ def dummy_data_load(start: date = date(2025, 4, 5), end: date = date(2025, 4, 7)
             for region in regions:
                 static_info["region"] = region
 
-                df = _load_static_info(dates, static_info, min_price, max_price)
+                df = _load_static_info(
+                    dates, static_info, min_price, max_price)
                 dfs.append(df)
 
             df = pd.concat(dfs, ignore_index=True)
@@ -86,6 +87,13 @@ def dummy_data_load(start: date = date(2025, 4, 5), end: date = date(2025, 4, 7)
 
     return pd.concat([aemo_df, bmrs_df], ignore_index=True)
 
+def import_data(load_type):
+    if load_type == 'real':
+        df = load_data()
+    else:
+        df = dummy_data_load()
+
+    return df
 
 def pivot_data(df, min_date, max_date):
     """data prep for time series chart"""
@@ -125,12 +133,9 @@ def calculate_bmrs_aemo_spread(df):
 def region_pivot(df: pd.DataFrame, min_date, max_date):
     df = df.copy()
 
-    min_date = pd.Timestamp(min_date).tz_localize('UTC') if min_date.tzinfo is None else pd.Timestamp(min_date).tz_convert('UTC')
-    max_date = pd.Timestamp(max_date).tz_localize('UTC') if max_date.tzinfo is None else pd.Timestamp(max_date).tz_convert('UTC')
-
-    df[df["timestamp_utc"].between(min_date, max_date)]
-
     df = df.pivot(columns="region", index="timestamp_utc", values="price")
+
+    df = df.loc[min_date:max_date]
 
     return df
 
@@ -144,12 +149,15 @@ def calculate_region_spread(df: pd.DataFrame, list_of_regions: List):
     return df
 
 
-def prepare_dispatch_settlement(df: pd.DataFrame, region: str):
-    regions = ["NSW1", "VIC1", "QLD1", "SA1", "TAS1"]
-    regions_to_drop = regions.remove(region)
-    df = df.drop(columns=regions_to_drop)
+def prepare_dispatch_settlement(df: pd.DataFrame, region: str, min_date, max_date):
 
-    df = df.rename({region: 'price'})
+    df = df.set_index('timestamp_utc')
 
-    min_summary = df.groupby(np.arange(len(df)) // 6).mean()
+    df = df[df['region'] == region]
+    df = df.loc[min_date:max_date]
+    df['price_30min'] = df['price'].resample('30min').transform('mean')
 
+    df = df[['price', 'price_30min']]
+    st.write(f"min_date: {min_date}")
+    st.write(f"df min: {df.index.min()}, df max: {df.index.max()}")
+    return df

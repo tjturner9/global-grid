@@ -1,9 +1,13 @@
+import os
 import streamlit as st
-from dashboard import dashboard_body_region, dashboard_sidebar_region
-from tools import load_data, dummy_data_load
+from dashboard import body_region, sidebar_region
+from tools import import_data
+from dotenv import load_dotenv
+load_dotenv()
 
-data = load_data()
-# data = dummy_data_load()
+load_type = os.getenv("LOAD_TYPE", "real")
+
+data = import_data(load_type)
 data = data[data["source"] == "AEMO"]
 
 if "min_date" not in st.session_state:
@@ -15,8 +19,6 @@ if "max_date" not in st.session_state:
 if "selected_regions" not in st.session_state:
     st.session_state["selected_regions"] = []
 
-dashboard_sidebar_region(data)
+sidebar_region(data)
 
-st.write(st.session_state["min_date"])
-st.write(st.session_state["max_date"])
-dashboard_body_region(data)
+body_region(data)
