@@ -3,10 +3,31 @@ from typing import List
 import pandas as pd
 import streamlit as st
 import numpy as np
-from datetime import date, datetime, UTC, tzinfo
+from datetime import date, datetime, UTC
+
 import random
 
 import psycopg2
+
+
+def _align_slice_bounds(min_date, max_date, dt_index: pd.DatetimeIndex):
+    """Match min/max bounds to index timezone so slicing/between never mixes naive and aware."""
+    idx_tz = dt_index.tz
+    lo = pd.Timestamp(min_date)
+    hi = pd.Timestamp(max_date)
+    if idx_tz is not None:
+        if lo.tzinfo is None:
+            lo = lo.tz_localize(UTC)
+        lo = lo.tz_convert(idx_tz)
+        if hi.tzinfo is None:
+            hi = hi.tz_localize(UTC)
+        hi = hi.tz_convert(idx_tz)
+    else:
+        if lo.tzinfo is not None:
+            lo = lo.tz_convert(UTC).tz_localize(None)
+        if hi.tzinfo is not None:
+            hi = hi.tz_convert(UTC).tz_localize(None)
+    return lo, hi
 
 
 @st.cache_data
@@ -72,8 +93,7 @@ def dummy_data_load(start: date = date(2025, 4, 5), end: date = date(2025, 4, 7)
             for region in regions:
                 static_info["region"] = region
 
-                df = _load_static_info(
-                    dates, static_info, min_price, max_price)
+                df = _load_static_info(dates, static_info, min_price, max_price)
                 dfs.append(df)
 
             df = pd.concat(dfs, ignore_index=True)
@@ -87,18 +107,23 @@ def dummy_data_load(start: date = date(2025, 4, 5), end: date = date(2025, 4, 7)
 
     return pd.concat([aemo_df, bmrs_df], ignore_index=True)
 
+
 def import_data(load_type):
-    if load_type == 'real':
+    if load_type == "real":
         df = load_data()
     else:
         df = dummy_data_load()
 
     return df
 
+
 def pivot_data(df, min_date, max_date):
     """data prep for time series chart"""
 
-    df[df["timestamp_utc"].between(min_date, max_date)]
+    lo, hi = _align_slice_bounds(
+        min_date, max_date, pd.DatetimeIndex(df["timestamp_utc"])
+    )
+    df = df[df["timestamp_utc"].between(lo, hi)]
     # Aggregate - group by timestamp and source
     grouped_data = df.groupby(by=["timestamp_utc", "source"], as_index=False)[
         "price"
@@ -135,7 +160,8 @@ def region_pivot(df: pd.DataFrame, min_date, max_date):
 
     df = df.pivot(columns="region", index="timestamp_utc", values="price")
 
-    df = df.loc[min_date:max_date]
+    lo, hi = _align_slice_bounds(min_date, max_date, df.index)
+    df = df.loc[lo:hi]
 
     return df
 
@@ -151,13 +177,12 @@ def calculate_region_spread(df: pd.DataFrame, list_of_regions: List):
 
 def prepare_dispatch_settlement(df: pd.DataFrame, region: str, min_date, max_date):
 
-    df = df.set_index('timestamp_utc')
+    df = df.set_index("timestamp_utc")
 
-    df = df[df['region'] == region]
-    df = df.loc[min_date:max_date]
-    df['price_30min'] = df['price'].resample('30min').transform('mean')
+    df = df[df["region"] == region]
+    lo, hi = _align_slice_bounds(min_date, max_date, df.index)
+    df = df.loc[lo:hi]
+    df["price_30min"] = df["price"].resample("30min").transform("mean")
 
-    df = df[['price', 'price_30min']]
-    st.write(f"min_date: {min_date}")
-    st.write(f"df min: {df.index.min()}, df max: {df.index.max()}")
+    df = df[["price", "price_30min"]]
     return df
