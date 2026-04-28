@@ -1,5 +1,6 @@
 import os
 from tools import import_data
+import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 from dashboard import body_app, sidebar_app
@@ -13,7 +14,8 @@ def create_app(load_type):
     data_chrono = data.sort_values(by="timestamp_utc")
 
     if "min_date" not in st.session_state:
-        st.session_state["min_date"] = data_chrono["timestamp_utc"].min()
+        # st.session_state["min_date"] = data_chrono["timestamp_utc"].min()
+        st.session_state["min_date"] = pd.Timestamp('2025-11-01', tz='UTC')
 
     if "max_date" not in st.session_state:
         st.session_state["max_date"] = data_chrono["timestamp_utc"].max()

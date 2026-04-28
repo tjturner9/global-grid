@@ -8,6 +8,8 @@ venv
 # Data
 *.zip
 *.csv
+energy_prices_backup.sql 
+# docker compose exec -T postgres psql -U griduser -d globalgrid < energy_prices_backup.sql
 
 # Editor
 .vscode/
