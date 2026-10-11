@@ -13,7 +13,7 @@
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/<your-username>/global-grid.git
+git clone https://github.com/tjturner9/global-grid.git
 cd global-grid
 ```
 
